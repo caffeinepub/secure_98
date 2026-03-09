@@ -1,0 +1,267 @@
+type _CaffeineStorageRefillResult = record {
+  success : opt bool;
+  topped_up_amount : opt nat;
+};
+type _CaffeineStorageRefillInformation = record {
+  proposed_top_up_amount : opt nat;
+};
+type _CaffeineStorageCreateCertificateResult = record {
+  blob_hash : text;
+  method : text;
+};
+type Relationship = variant {
+  aunt;
+  cousin;
+  father;
+  friend;
+  grandfather;
+  grandmother;
+  mother;
+  other;
+  uncle;
+};
+type Profile = record {
+  name : text;
+  photoBlob : opt ExternalBlob;
+};
+type PetSex = variant {
+  female;
+  male;
+  unknown;
+};
+type Permissions = record {
+  canAddMeasurements : bool;
+  canAddMemories : bool;
+  canViewMeasurements : bool;
+};
+type PaginatedMemories = record {
+  hasMore : bool;
+  memories : vec MemoryView;
+  nextCursor : opt nat;
+};
+type MyPermissions = record {
+  canAddMeasurements : bool;
+  canAddMemories : bool;
+  canViewMeasurements : bool;
+  isOwner : bool;
+};
+type MemoryView = record {
+  author : principal;
+  authorName : text;
+  authorPhotoBlob : opt ExternalBlob;
+  caption : opt text;
+  createdAt : int;
+  date : text;
+  familyId : nat;
+  id : nat;
+  isAuthor : bool;
+  mediaBlobs : vec ExternalBlob;
+  mediaTypes : vec text;
+  milestoneKey : opt text;
+  milestoneMemberId : opt nat;
+  taggedMemberIds : vec nat;
+};
+type MemberKind = variant {
+  child;
+  pet;
+};
+type LikeInfo = record {
+  count : nat;
+  likedByMe : bool;
+};
+type GrowthMeasurementView = record {
+  date : text;
+  dependentId : nat;
+  heightCm : opt float64;
+  id : nat;
+  recordedAt : int;
+  weightKg : opt float64;
+};
+type FamilyMemberView = record {
+  displayName : text;
+  isOwner : bool;
+  joinedAt : int;
+  permissions : Permissions;
+  "principal" : principal;
+  relationship : Relationship;
+};
+type Family = record {
+  createdAt : int;
+  id : nat;
+  name : text;
+  owner : principal;
+};
+type ExternalBlob = blob;
+type Dependent = record {
+  adoptionDate : opt text;
+  breed : opt text;
+  dateOfBirth : opt text;
+  familyId : nat;
+  id : nat;
+  kind : MemberKind;
+  name : text;
+  petType : opt text;
+  photoBlob : opt ExternalBlob;
+  sex : opt PetSex;
+};
+type DaySummary = record {
+  date : text;
+  memoryCount : nat;
+  previewBlob : opt ExternalBlob;
+  previewCaption : opt text;
+};
+type CustomMilestone = record {
+  category : text;
+  familyId : nat;
+  key : text;
+  memberId : nat;
+  name : text;
+};
+type CommentView = record {
+  author : principal;
+  authorName : text;
+  canDelete : bool;
+  createdAt : int;
+  id : nat;
+  memoryId : nat;
+  "text" : text;
+};
+service : {
+  _caffeineStorageBlobIsLive : (hash : blob) -> (bool) query;
+  _caffeineStorageBlobsToDelete : () -> (vec blob) query;
+  _caffeineStorageConfirmBlobDeletion : (blobs : vec blob) -> ();
+  _caffeineStorageCreateCertificate : (blobHash : text) -> (_CaffeineStorageCreateCertificateResult);
+  _caffeineStorageRefillCashier : (
+    refillInformation : opt _CaffeineStorageRefillInformation
+  ) -> (_CaffeineStorageRefillResult);
+  _caffeineStorageUpdateGatewayPrincipals : () -> ();
+  addComment : (familyId : nat, memoryId : nat, "text" : text) -> (nat);
+  addDependent : (
+    familyId : nat,
+    kind : MemberKind,
+    name : text,
+    dateOfBirth : opt text,
+    petType : opt text,
+    breed : opt text,
+    sex : opt PetSex,
+    adoptionDate : opt text,
+    photoBlob : opt ExternalBlob,
+  ) -> (nat);
+  addGrowthMeasurement : (
+    familyId : nat,
+    dependentId : nat,
+    date : text,
+    heightCm : opt float64,
+    weightKg : opt float64,
+  ) -> (nat);
+  createCustomMilestone : (
+    familyId : nat,
+    memberId : nat,
+    name : text,
+    category : opt text,
+  ) -> (text);
+  createFamily : (name : text) -> (nat);
+  createMemory : (
+    familyId : nat,
+    date : text,
+    caption : opt text,
+    mediaBlobs : vec ExternalBlob,
+    mediaTypes : vec text,
+    taggedMemberIds : vec nat,
+    milestoneKey : opt text,
+    milestoneMemberId : opt nat,
+  ) -> (nat);
+  deleteComment : (familyId : nat, commentId : nat, memoryId : nat) -> ();
+  deleteCustomMilestone : (
+    familyId : nat,
+    memberId : nat,
+    milestoneKey : text,
+  ) -> ();
+  deleteFamily : (familyId : nat) -> ();
+  deleteGrowthMeasurement : (familyId : nat, measurementId : nat) -> ();
+  deleteMemory : (familyId : nat, memoryId : nat) -> ();
+  generateInviteCode : (familyId : nat) -> (text);
+  getAchievedMilestoneKeys : (familyId : nat, memberId : nat) -> (vec text) query;
+  getComments : (familyId : nat, memoryId : nat) -> (vec CommentView) query;
+  getCustomMilestones : (familyId : nat, memberId : nat) -> (vec CustomMilestone) query;
+  getFamily : (familyId : nat) -> (opt Family) query;
+  getFamilyDependents : (familyId : nat) -> (vec Dependent) query;
+  getFamilyMembers : (familyId : nat) -> (vec FamilyMemberView) query;
+  getFlashbacks : (familyId : nat, date : text) -> (vec MemoryView) query;
+  getGrowthMeasurements : (familyId : nat, dependentId : nat) -> (vec GrowthMeasurementView) query;
+  getLikes : (familyId : nat, memoryId : nat) -> (LikeInfo) query;
+  getMediaMemories : (
+    familyId : nat,
+    cursor : opt nat,
+    limit : nat,
+    memberId : opt nat,
+  ) -> (PaginatedMemories) query;
+  getMemberMomentCount : (familyId : nat, memberId : nat) -> (nat) query;
+  getMemoriesByDate : (familyId : nat, date : text) -> (vec MemoryView) query;
+  getMemoriesForMilestone : (
+    familyId : nat,
+    memberId : nat,
+    milestoneKey : text,
+  ) -> (vec MemoryView) query;
+  getMemory : (familyId : nat, memoryId : nat) -> (opt MemoryView) query;
+  getMonthSummary : (
+    familyId : nat,
+    year : nat,
+    month : nat,
+    memberId : opt nat,
+  ) -> (vec DaySummary) query;
+  getMyPermissions : (familyId : nat) -> (MyPermissions) query;
+  getProfile : () -> (opt Profile) query;
+  getRecentMemories : (
+    familyId : nat,
+    cursor : opt nat,
+    limit : nat,
+    memberId : opt nat,
+  ) -> (PaginatedMemories) query;
+  getUserFamilies : () -> (vec Family) query;
+  linkMemoryToMilestone : (
+    familyId : nat,
+    memoryId : nat,
+    milestoneKey : text,
+    memberId : nat,
+  ) -> ();
+  redeemInviteCode : (code : text, relationship : Relationship) -> (Family);
+  removeDependent : (familyId : nat, dependentId : nat) -> ();
+  removeFamilyMember : (familyId : nat, member : principal) -> ();
+  searchMemories : (familyId : nat, searchText : text) -> (vec MemoryView) query;
+  setProfile : (name : text, photoBlob : opt ExternalBlob) -> ();
+  toggleLike : (familyId : nat, memoryId : nat) -> (LikeInfo);
+  unlinkMemoryFromMilestone : (familyId : nat, memoryId : nat) -> ();
+  updateDependent : (
+    familyId : nat,
+    dependentId : nat,
+    name : text,
+    dateOfBirth : opt text,
+    petType : opt text,
+    breed : opt text,
+    sex : opt PetSex,
+    adoptionDate : opt text,
+    photoBlob : opt ExternalBlob,
+  ) -> ();
+  updateMemberPermissions : (
+    familyId : nat,
+    member : principal,
+    permissions : Permissions,
+  ) -> ();
+  updateMemberRelationship : (
+    familyId : nat,
+    member : principal,
+    relationship : Relationship,
+  ) -> ();
+  updateMemory : (
+    familyId : nat,
+    memoryId : nat,
+    date : text,
+    caption : opt text,
+    mediaBlobs : vec ExternalBlob,
+    mediaTypes : vec text,
+    taggedMemberIds : vec nat,
+    milestoneKey : opt text,
+    milestoneMemberId : opt nat,
+  ) -> ();
+};
